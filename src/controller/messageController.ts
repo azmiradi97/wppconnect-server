@@ -1030,3 +1030,95 @@ export async function sendImageAsStickerGif(req: Request, res: Response) {
     returnError(req, res, error);
   }
 }
+export async function sendFileMultiUsers(req: Request, res: Response) {
+  /**
+   * #swagger.tags = ["Messages"]
+   * #swagger.autoBody=false
+   * #swagger.security = [{
+   *    "bearerAuth": []
+   * }]
+   * #swagger.parameters["session"] = {
+   *   schema: 'NERDWHATS_AMERICA'
+   * }
+   * #swagger.requestBody = {
+   *   required: true,
+   *   "@content": {
+   *     "application/json": {
+   *       schema: {
+   *         type: "array",
+   *         items: {
+   *           type: "object",
+   *           properties: {
+   *             "phone": { type: "string" },
+   *             "message": {
+   *               type: "object",
+   *               properties: {
+   *                 "filename": { type: "string" },
+   *                 "caption": { type: "string" },
+   *                 "base64": { type: "string" }
+   *               }
+   *             }
+   *           }
+   *         }
+   *       },
+   *       examples: {
+   *         "Default": {
+   *           value: [
+   *             {
+   *               "phone": "5521999999999",
+   *               "message": {
+   *                 "filename": "file name lol",
+   *                 "caption": "caption for my file",
+   *                 "base64": "<base64> string"
+   *               }
+   *             }
+   *           ]
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   */
+  const phoneMessages = req.body;
+
+  if (
+    !phoneMessages ||
+    !Array.isArray(phoneMessages) ||
+    phoneMessages.length === 0
+  )
+    return res.status(400).send({
+      message: 'Phone messages array is required and must not be empty.',
+    });
+
+  try {
+    const results: any = [];
+    for (const phoneMessage of phoneMessages) {
+      const { phone, message } = phoneMessage;
+      if (!phone || !message) {
+        return res.status(400).send({
+          message:
+            'Each phone message object must have a phone number and a message.',
+        });
+      }
+
+      const { filename = 'file', base64, caption } = message;
+      if (!base64) {
+        return res.status(400).send({
+          message: 'Base64 data is required for the message.',
+        });
+      }
+      results.push(
+        await req.client.sendFile(phone, base64, {
+          filename,
+          caption,
+        })
+      );
+    }
+
+    if (results.length === 0)
+      return res.status(400).json('Error sending message');
+    await returnSucess(res, results);
+  } catch (error) {
+    returnError(req, res, error);
+  }
+}

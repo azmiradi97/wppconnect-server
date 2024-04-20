@@ -123,6 +123,13 @@ routes.post(
   MessageController.sendFile
 );
 routes.post(
+  '/api/:session/send-images-to-multi-users',
+  upload.array('file'),
+  verifyToken,
+  statusConnection,
+  MessageController.sendFileMultiUsers
+);
+routes.post(
   '/api/:session/send-sticker',
   upload.single('file'),
   verifyToken,
